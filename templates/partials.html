@@ -92,9 +92,9 @@ details summary{cursor:pointer;color:var(--dim)}
     <div><div class="l">buy ≤</div><div class="v">{{gp .EntryPriceP}}</div></div>
     <div><div class="l">sell ≥</div><div class="v">{{gp .ExitPriceP}}</div></div>
     <div><div class="l">units</div><div class="v">{{gp .UnitsUsed}}</div></div>
-    <div><div class="l">gp/4h proj</div><div class="v">{{gp .Per4hGp}}</div></div>
-    {{if .Live}}{{if .Live.RealizedPer4hGp}}
-    <div><div class="l">gp/4h now</div><div class="v">{{gp .Live.RealizedPer4hGp}}</div></div>
+    <div><div class="l">gp/1h proj</div><div class="v">{{gp .Per1hGp}}</div></div>
+    {{if .Live}}{{if .Live.RealizedPer1hGp}}
+    <div><div class="l">gp/1h now</div><div class="v">{{gp .Live.RealizedPer1hGp}}</div></div>
     {{end}}{{end}}
     <div><div class="l">roi</div><div class="v">{{pct .RoiPct}}</div></div>
     <div><div class="l">capital</div><div class="v">{{gp .Capital}}</div></div>
