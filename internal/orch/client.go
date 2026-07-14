@@ -79,7 +79,7 @@ type Evaluation struct {
 	LowAgeS         *int            `json:"low_age_s"`
 	CurMargin       *int64          `json:"cur_margin"`
 	Vol30m          *int64          `json:"vol_30m"`
-	RealizedPer4hGp *int64          `json:"realized_per_4h_gp"`
+	RealizedPer1hGp *int64          `json:"realized_per_1h_gp"`
 	Checks          map[string]bool `json:"checks"`
 	Verdict         string          `json:"verdict"`
 }
@@ -100,7 +100,7 @@ type Strategy struct {
 	KillPrice     *int64          `json:"kill_price"`
 	Capital       *int64          `json:"capital_required"`
 	UnitsUsed     *int64          `json:"units_used"`
-	Per4hGp       *int64          `json:"per_4h_gp"`
+	Per1hGp       *int64          `json:"per_1h_gp"`
 	PerDayGp      *int64          `json:"per_day_gp"`
 	RoiPct        *float64        `json:"roi_pct"`
 	Confidence    string          `json:"confidence"`

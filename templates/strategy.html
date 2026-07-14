@@ -11,7 +11,7 @@
     <div><div class="l">sell ≥</div><div class="v">{{gp .S.ExitPriceP}}</div></div>
     <div><div class="l">kill @</div><div class="v">{{gp .S.KillPrice}}</div></div>
     <div><div class="l">units</div><div class="v">{{gp .S.UnitsUsed}}</div></div>
-    <div><div class="l">gp/4h proj</div><div class="v">{{gp .S.Per4hGp}}</div></div>
+    <div><div class="l">gp/1h proj</div><div class="v">{{gp .S.Per1hGp}}</div></div>
     <div><div class="l">capital</div><div class="v">{{gp .S.Capital}}</div></div>
     <div><div class="l">opened</div><div class="v" style="font-size:.95rem">{{since .S.OpenedAt}}</div></div>
   </div>
@@ -25,13 +25,13 @@
 {{if not .Evals}}<p class="dim">None yet — the evaluator runs on a timer.</p>{{end}}
 {{if .Evals}}
 <table>
-  <tr><th>at</th><th>verdict</th><th>high</th><th>low</th><th>margin</th><th>vol 30m</th><th>gp/4h now</th><th>checks</th></tr>
+  <tr><th>at</th><th>verdict</th><th>high</th><th>low</th><th>margin</th><th>vol 30m</th><th>gp/1h now</th><th>checks</th></tr>
   {{range .Evals}}
   <tr>
     <td class="dim">{{since .At}}</td>
     <td><span class="pill {{verdictClass .Verdict}}">{{.Verdict}}</span></td>
     <td>{{gp .CurHigh}}</td><td>{{gp .CurLow}}</td><td>{{gp .CurMargin}}</td>
-    <td>{{gp .Vol30m}}</td><td>{{gp .RealizedPer4hGp}}</td>
+    <td>{{gp .Vol30m}}</td><td>{{gp .RealizedPer1hGp}}</td>
     <td>{{range $k, $ok := .Checks}}<span class="check {{if $ok}}ok{{else}}bad{{end}}">{{$k}}</span>{{end}}</td>
   </tr>
   {{end}}
