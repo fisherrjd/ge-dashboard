@@ -128,7 +128,7 @@ func (s *server) triggerRun(w http.ResponseWriter, r *http.Request) {
 	}
 	b.WriteString(`, "archetypes": {`)
 	first := true
-	for _, a := range []string{"A", "B", "C", "D", "E", "F", "G"} {
+	for _, a := range []string{"A", "B", "C", "D", "E", "F"} {
 		if v := r.FormValue("w_" + a); v != "" {
 			if !first {
 				b.WriteString(", ")
