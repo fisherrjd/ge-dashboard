@@ -1,0 +1,113 @@
+{{template "head" .}}
+<h1>Info <span class="dim">— what everything on this dashboard means</span></h1>
+
+<div class="card">
+  <h2>How to read this dashboard</h2>
+  <p>Each <a href="/runs">run</a> is one research cycle: the agent studies live Grand Exchange data and produces strategies.
+  Every strategy is then <strong>paper-traded</strong> — re-evaluated against live prices every 5 minutes until its evaluation window
+  ends. The <a href="/scoreboard">scoreboard</a> aggregates those outcomes per archetype and automatically feeds the next run's brief.
+  Between runs, the collector sweeps the market hourly and queues <a href="/signals">signals</a> for the next run to investigate.
+  The strip under the nav shows what's in flight right now: the active run (if any), open and armed positions, and pending signals.</p>
+</div>
+
+<div class="card">
+  <h2>Strategy lifecycle</h2>
+  <div class="legend">
+    <span><span class="pill ok">open</span></span><span>A live paper position, currently being evaluated every 5 minutes.</span>
+    <span><span class="pill warn">armed</span></span><span>A volume-anomaly (V) strategy waiting for its trigger condition to fire — no position yet.</span>
+    <span><span class="pill ok">confirmed</span></span><span>Survived its full evaluation window healthy. A win for its archetype.</span>
+    <span><span class="pill bad">killed</span></span><span>Its own kill switch tripped (price crossed the kill level) — closed early.</span>
+    <span><span class="pill unknown">expired</span></span><span>The evaluation window ended without confirmation, or an armed trigger never fired.</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Live verdicts</h2>
+  <p>On <a href="/">Actionable now</a>, each strategy is re-checked against current prices when the page loads:</p>
+  <div class="legend">
+    <span><span class="pill ok">healthy</span></span><span>All health checks pass — the thesis still holds at current prices.</span>
+    <span><span class="pill warn">degraded</span></span><span>Some checks fail (stale prices, thin volume, entry/exit out of reach) — proceed with caution.</span>
+    <span><span class="pill bad">kill_signal</span></span><span>The kill condition is met right now — the strategy's own rules say get out / don't enter.</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Confidence</h2>
+  <p>The agent's own rating of how well the data supports the thesis:
+  <span class="pill unknown">high</span> <span class="pill unknown">medium</span> <span class="pill unknown">low</span>
+  <span class="pill unknown">insufficient_history</span> — the last means the item lacks enough price history to judge.</p>
+</div>
+
+<div class="card">
+  <h2>Archetypes</h2>
+  <div class="legend">
+    <span><span class="pill arch">S</span></span><span><strong>Seasonal window</strong> — buy in a recurring cheap hour-of-week window, sell in a recurring dear one.</span>
+    <span><span class="pill arch">V</span></span><span><strong>Volume anomaly</strong> — arms on a detected anomaly, then waits for a trigger (volume z-score or price move) before entering.</span>
+    <span><span class="pill arch">C</span></span><span><strong>Conversion</strong> — buy inputs, sell outputs (or vice versa) across a crafting/processing relation; profit is the post-tax margin.</span>
+    <span><span class="pill arch">U</span></span><span><strong>Update / event</strong> — positioned ahead of a dated game update or event expected to move the item.</span>
+    <span><span class="pill arch">H</span></span><span><strong>Swing hold</strong> — multi-day hold from a low price band back to a higher one.</span>
+  </div>
+  <p class="dim">Retired letters A–G in old scoreboard rows are pre-re-architecture history; all were closed during the migration.</p>
+</div>
+
+<div class="card">
+  <h2>Health-check chips</h2>
+  <p>Each evaluation runs archetype-specific checks: <span class="check ok">vol_ok</span> means passed,
+  <span class="check bad">vol_ok</span> means failed. Any failing check degrades the verdict; kill checks trip it to kill_signal.</p>
+  <div class="legend">
+    <span class="mono">kill_price_ok</span><span>Price has not crossed the kill level.</span>
+    <span class="mono">legs_fresh</span><span>All legs' prices traded recently (not stale).</span>
+    <span class="mono">buy_leg_fresh / sell_leg_fresh</span><span>The buy/sell side specifically traded recently.</span>
+    <span class="mono">legs_priced</span><span>Every leg has a price at all (nulls mean nothing traded that side).</span>
+    <span class="mono">entry_reachable</span><span>Current price makes the planned entry realistic.</span>
+    <span class="mono">exit_reachable</span><span>Current price makes the planned exit realistic.</span>
+    <span class="mono">vol_ok</span><span>Enough recent volume to actually fill the planned units.</span>
+    <span class="mono">margin_ok</span><span>Conversion margin is still positive after tax.</span>
+    <span class="mono">out_of_window</span><span>Currently outside the strategy's buy/sell hour-of-week window (informational).</span>
+    <span class="mono">windows_observed</span><span>The seasonal windows have been observed in recent data.</span>
+    <span class="mono">armed_waiting</span><span>V strategy is armed and its trigger hasn't fired yet.</span>
+    <span class="mono">trigger_fired</span><span>V strategy's trigger condition has fired.</span>
+  </div>
+  <p class="dim">Which checks apply depends on archetype — S: kill_price_ok, buy_leg_fresh, entry_reachable, vol_ok, sell_leg_fresh, exit_reachable, out_of_window, windows_observed ·
+  V: armed_waiting, trigger_fired, kill_price_ok, legs_fresh, vol_ok, exit_reachable ·
+  C: legs_priced, legs_fresh, vol_ok, margin_ok ·
+  U: kill_price_ok, legs_fresh, entry_reachable ·
+  H: kill_price_ok, legs_fresh, entry_reachable, exit_reachable, vol_ok.</p>
+</div>
+
+<div class="card">
+  <h2>Runs</h2>
+  <div class="legend">
+    <span><span class="pill warn">running</span></span><span>The agent is mid-cycle — its run page streams live progress.</span>
+    <span><span class="pill ok">succeeded</span></span><span>Finished with an accepted report and strategies.</span>
+    <span><span class="pill bad">failed</span></span><span>Died or its report was rejected — see the fail reason on the run.</span>
+  </div>
+  <p class="dim">Only one run can be active at a time; triggering a new one while a run is active redirects you to the active run.</p>
+</div>
+
+<div class="card">
+  <h2>Signals</h2>
+  <p>Kinds (which collector lens produced it): <span class="pill arch">seasonal</span> recurring hour-of-week pattern ·
+  <span class="pill arch">volume</span> volume anomaly · <span class="pill arch">band</span> price at the edge of its band.</p>
+  <div class="legend">
+    <span><span class="pill warn">pending</span></span><span>Queued — will be assigned to the next run's brief.</span>
+    <span><span class="pill unknown">assigned</span></span><span>Picked up by a run currently investigating it.</span>
+    <span><span class="pill ok">investigated</span></span><span>The run shipped a strategy from it.</span>
+    <span><span class="pill bad">dismissed</span></span><span>Investigated but not worth a strategy, or expired unused.</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Numbers glossary</h2>
+  <div class="legend">
+    <span class="mono">gp/1h proj</span><span>Profit per hour the run projected when it created the strategy (post-tax, buy-limit-aware).</span>
+    <span class="mono">gp/1h now</span><span>What paper-trading says it's actually paying, with the self-impact haircut: 15% volume participation and 0.5% slippage. Treat paper results as modeled upper bounds.</span>
+    <span class="mono">roi</span><span>Projected return on the capital tied up.</span>
+    <span class="mono">realized / projected</span><span>Scoreboard ratio of median realized gp/1h to projected — how honest an archetype's projections are (1.0 = spot on).</span>
+    <span class="mono">buy/sell window</span><span>Hour-of-week ranges in UTC (e.g. "Tue 02:00–Tue 06:00") when the seasonal pattern says to trade.</span>
+    <span class="mono">trigger</span><span><span class="mono">volume_zscore</span> or <span class="mono">price_move_pct</span> going <em>above</em>/<em>below</em> a threshold over a window — what fires an armed V strategy.</span>
+    <span><span class="pill ok">buy</span> / <span class="pill warn">sell</span></span><span>Leg sides: what to buy and what to sell, with quantities and the prices at spec time.</span>
+  </div>
+  <p class="dim">A dash (—) means no data: null prices are signal here — nothing traded that side in that window. They are never zero-filled.</p>
+</div>
+{{template "foot" .}}

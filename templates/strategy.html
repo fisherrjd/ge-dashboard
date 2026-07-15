@@ -1,7 +1,7 @@
 {{template "head" .}}
 {{with .Data}}
 <h1><span class="pill arch">{{.S.Archetype}}</span> {{.S.Title}}
-  <span class="pill {{if eq .S.State "open"}}ok{{else if eq .S.State "killed"}}bad{{else if eq .S.State "armed"}}warn{{else}}unknown{{end}}">{{.S.State}}</span>
+  <span class="pill {{statePill .S.State}}">{{.S.State}}</span>
 </h1>
 {{if .S.StateReason}}<p class="kill">{{.S.StateReason}}</p>{{end}}
 
@@ -13,7 +13,7 @@
     <div><div class="l">units</div><div class="v">{{gp .S.UnitsUsed}}</div></div>
     <div><div class="l">gp/1h proj</div><div class="v">{{gp .S.Per1hGp}}</div></div>
     <div><div class="l">capital</div><div class="v">{{gp .S.Capital}}</div></div>
-    <div><div class="l">opened</div><div class="v" style="font-size:.95rem">{{since .S.OpenedAt}}</div></div>
+    <div><div class="l">opened</div><div class="v sm">{{since .S.OpenedAt}}</div></div>
   </div>
   {{if .S.BuyWindow}}
   <p><span class="dim">Buy window:</span> {{howText .S.BuyWindow.FromHow}}–{{howText .S.BuyWindow.ToHow}} UTC
@@ -27,7 +27,7 @@
      {{else if eq .S.State "armed"}}· <span class="pill warn">armed — not yet fired</span>{{end}}</p>
   {{end}}
   {{if .S.Legs}}
-  <table style="margin:.6rem 0">
+  <table class="inset">
     <tr><th>leg</th><th>item</th><th>qty / conversion</th><th>price at spec</th></tr>
     {{range .S.Legs}}
     <tr><td><span class="pill {{if eq .Side "buy"}}ok{{else}}warn{{end}}">{{.Side}}</span></td>

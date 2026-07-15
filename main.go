@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -47,6 +48,9 @@ func main() {
 		"ratio":   func(f *float64) string { if f == nil { return "—" }; return fmt.Sprintf("%.2f", *f) },
 		"since":   since,
 		"verdictClass": verdictClass,
+		"statePill":    statePill,
+		"runPill":      runPill,
+		"signalPill":   signalPill,
 		"howText":      howText,
 		"sinceP": func(t *time.Time) string {
 			if t == nil {
@@ -80,6 +84,8 @@ func main() {
 	mux.HandleFunc("GET /strategies/{id}", s.strategy)
 	mux.HandleFunc("GET /scoreboard", s.scoreboard)
 	mux.HandleFunc("GET /signals", s.signals)
+	mux.HandleFunc("GET /info", s.info)
+	mux.HandleFunc("GET /status", s.status)
 
 	log.Printf("listening on %s (orchestrator: %s)", addr, orchURL)
 	log.Fatal(http.ListenAndServe(addr, mux))
@@ -89,14 +95,63 @@ type page struct {
 	Title  string
 	Active string
 	Err    string
+	Status *status
 	Data   any
 }
 
-func (s *server) render(w http.ResponseWriter, name string, p page) {
+// status feeds the in-flight strip shown under the nav on every page.
+type status struct {
+	ActiveRunID          int64
+	Open, Armed, Pending int
+}
+
+// fetchStatus returns nil when the orchestrator is unreachable — the strip
+// hides itself and the page-level .Err banner reports the outage.
+func (s *server) fetchStatus(ctx context.Context) *status {
+	h, err := s.orch.Health(ctx)
+	if err != nil {
+		return nil
+	}
+	st := &status{ActiveRunID: h.ActiveRunID}
+	if strats, err := s.orch.OpenStrategies(ctx); err == nil {
+		for _, x := range strats {
+			switch x.State {
+			case "open":
+				st.Open++
+			case "armed":
+				st.Armed++
+			}
+		}
+	}
+	// 500 is the API's max limit — pending signals accumulate past 100.
+	if sigs, err := s.orch.Signals(ctx, 500); err == nil {
+		for _, sg := range sigs {
+			if sg.Status == "pending" {
+				st.Pending++
+			}
+		}
+	}
+	return st
+}
+
+func (s *server) render(w http.ResponseWriter, r *http.Request, name string, p page) {
+	p.Status = s.fetchStatus(r.Context())
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := s.tpl.ExecuteTemplate(w, name, p); err != nil {
 		log.Printf("render %s: %v", name, err)
 	}
+}
+
+// status serves the bare strip partial for the htmx 30s poll.
+func (s *server) status(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := s.tpl.ExecuteTemplate(w, "status_strip", s.fetchStatus(r.Context())); err != nil {
+		log.Printf("render status_strip: %v", err)
+	}
+}
+
+func (s *server) info(w http.ResponseWriter, r *http.Request) {
+	s.render(w, r, "info.html", page{Title: "Info", Active: "info"})
 }
 
 func (s *server) index(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +160,7 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p.Err = "orchestrator unreachable: " + err.Error()
 	}
-	s.render(w, "index.html", p)
+	s.render(w, r, "index.html", p)
 }
 
 func (s *server) runs(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +171,7 @@ func (s *server) runs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p.Err = "orchestrator unreachable: " + err.Error()
 	}
-	s.render(w, "runs.html", p)
+	s.render(w, r, "runs.html", p)
 }
 
 // triggerRun converts the brief form to the orchestrator's JSON body and
@@ -184,7 +239,7 @@ func (s *server) run(w http.ResponseWriter, r *http.Request) {
 	}
 	run, strategies, err := s.orch.Run(r.Context(), id)
 	if err != nil {
-		s.render(w, "run.html", page{Title: "Run", Active: "runs", Err: err.Error()})
+		s.render(w, r, "run.html", page{Title: "Run", Active: "runs", Err: err.Error()})
 		return
 	}
 	var reportHTML template.HTML
@@ -197,7 +252,7 @@ func (s *server) run(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	s.render(w, "run.html", page{Title: fmt.Sprintf("Run %d", id), Active: "runs", Data: map[string]any{
+	s.render(w, r, "run.html", page{Title: fmt.Sprintf("Run %d", id), Active: "runs", Data: map[string]any{
 		"Run": run, "Strategies": strategies, "ReportHTML": reportHTML,
 	}})
 }
@@ -210,16 +265,16 @@ func (s *server) strategy(w http.ResponseWriter, r *http.Request) {
 	}
 	st, evals, err := s.orch.Strategy(r.Context(), id)
 	if err != nil {
-		s.render(w, "strategy.html", page{Title: "Strategy", Active: "index", Err: err.Error()})
+		s.render(w, r, "strategy.html", page{Title: "Strategy", Active: "index", Err: err.Error()})
 		return
 	}
-	s.render(w, "strategy.html", page{Title: st.Title, Active: "index", Data: map[string]any{
+	s.render(w, r, "strategy.html", page{Title: st.Title, Active: "index", Data: map[string]any{
 		"S": st, "Evals": evals,
 	}})
 }
 
 func (s *server) signals(w http.ResponseWriter, r *http.Request) {
-	sigs, err := s.orch.Signals(r.Context())
+	sigs, err := s.orch.Signals(r.Context(), 100)
 	trends := map[string][]orch.TrendRow{}
 	for _, lens := range []string{"seasonal", "volume", "band"} {
 		if rows, terr := s.orch.Trends(r.Context(), lens); terr == nil {
@@ -232,7 +287,7 @@ func (s *server) signals(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p.Err = "orchestrator unreachable: " + err.Error()
 	}
-	s.render(w, "signals.html", p)
+	s.render(w, r, "signals.html", p)
 }
 
 func (s *server) scoreboard(w http.ResponseWriter, r *http.Request) {
@@ -241,7 +296,7 @@ func (s *server) scoreboard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p.Err = "orchestrator unreachable: " + err.Error()
 	}
-	s.render(w, "scoreboard.html", p)
+	s.render(w, r, "scoreboard.html", p)
 }
 
 // --- helpers ---
@@ -294,6 +349,41 @@ func howText(b int) string {
 		return fmt.Sprintf("?%d", b)
 	}
 	return fmt.Sprintf("%s %02d:00", days[b/24], b%24)
+}
+
+// statePill maps a strategy lifecycle state to its pill color class.
+func statePill(s string) string {
+	switch s {
+	case "open", "confirmed":
+		return "ok"
+	case "armed":
+		return "warn"
+	case "killed":
+		return "bad"
+	}
+	return "unknown" // expired
+}
+
+func runPill(s string) string {
+	switch s {
+	case "succeeded":
+		return "ok"
+	case "failed":
+		return "bad"
+	}
+	return "warn" // running
+}
+
+func signalPill(s string) string {
+	switch s {
+	case "pending":
+		return "warn"
+	case "investigated":
+		return "ok"
+	case "assigned":
+		return "unknown"
+	}
+	return "bad" // dismissed
 }
 
 func verdictClass(v string) string {

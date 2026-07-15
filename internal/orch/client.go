@@ -240,6 +240,13 @@ func (c *Client) LatestStrategiesLive(ctx context.Context) ([]Strategy, error) {
 	return out, c.get(ctx, "/api/strategies?scope=latest_run&live=1", &out)
 }
 
+// OpenStrategies returns open+armed strategies across all runs (scope=open,
+// no live compute — cheap enough to call on every page render).
+func (c *Client) OpenStrategies(ctx context.Context) ([]Strategy, error) {
+	var out []Strategy
+	return out, c.get(ctx, "/api/strategies?scope=open", &out)
+}
+
 func (c *Client) Strategy(ctx context.Context, id int64) (*Strategy, []Evaluation, error) {
 	var out struct {
 		Strategy   Strategy     `json:"strategy"`
@@ -254,9 +261,9 @@ func (c *Client) Scoreboard(ctx context.Context) ([]ScoreboardRow, error) {
 	return out, c.get(ctx, "/api/scoreboard", &out)
 }
 
-func (c *Client) Signals(ctx context.Context) ([]Signal, error) {
+func (c *Client) Signals(ctx context.Context, limit int) ([]Signal, error) {
 	var out []Signal
-	return out, c.get(ctx, "/api/signals?limit=100", &out)
+	return out, c.get(ctx, fmt.Sprintf("/api/signals?limit=%d", limit), &out)
 }
 
 func (c *Client) Trends(ctx context.Context, lens string) ([]TrendRow, error) {
