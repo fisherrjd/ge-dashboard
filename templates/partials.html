@@ -56,6 +56,25 @@ button:hover{filter:brightness(1.1)}
 details summary{cursor:pointer;color:var(--dim)}
 .check{font-size:.82rem;margin-right:.7rem;white-space:nowrap}
 .check.ok::before{content:"✓ ";color:var(--ok)}.check.bad::before{content:"✗ ";color:var(--bad)}
+.card h2:first-child{margin-top:0}
+.c-ok{color:var(--ok)}.c-warn{color:var(--warn)}.c-bad{color:var(--bad)}
+pre.wrap{white-space:pre-wrap}
+.sub{font-size:.85rem}
+.hint{margin-left:.8rem}
+.weights{display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem}
+.metrics{font-size:.75rem;max-width:26rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log.short{max-height:14rem}
+.v.sm{font-size:.95rem}
+table.inset{margin:.6rem 0;width:auto}
+.legend{display:grid;grid-template-columns:9rem 1fr;gap:.4rem .9rem;align-items:baseline}
+.strip{display:flex;gap:.9rem;align-items:center;padding:.35rem 1.4rem;font-size:.82rem;
+  background:var(--panel2);border-bottom:1px solid var(--border);min-height:1.9rem}
+.strip b{font-variant-numeric:tabular-nums}
+.strip .sep{color:var(--dim)}
+.dot{display:inline-block;width:.55rem;height:.55rem;border-radius:50%}
+.dot.run{background:var(--warn);animation:pulse 1.4s ease-in-out infinite}
+.dot.idle{background:var(--ok)}
+@keyframes pulse{50%{opacity:.35}}
 </style>
 </head>
 <body>
@@ -65,7 +84,9 @@ details summary{cursor:pointer;color:var(--dim)}
   <a href="/runs" {{if eq .Active "runs"}}class="active"{{end}}>Runs</a>
   <a href="/scoreboard" {{if eq .Active "scoreboard"}}class="active"{{end}}>Scoreboard</a>
   <a href="/signals" {{if eq .Active "signals"}}class="active"{{end}}>Signals</a>
+  <a href="/info" {{if eq .Active "info"}}class="active"{{end}}>Info</a>
 </nav>
+{{template "status_strip" .Status}}
 <main>
 {{if .Err}}<div class="err">{{.Err}}</div>{{end}}
 {{end}}
@@ -74,6 +95,19 @@ details summary{cursor:pointer;color:var(--dim)}
 </main>
 </body>
 </html>
+{{end}}
+
+{{define "status_strip"}}
+<div class="strip" id="strip" hx-get="/status" hx-trigger="every 30s" hx-swap="outerHTML">
+  {{if .}}
+    {{if .ActiveRunID}}<span class="dot run"></span><a href="/runs/{{.ActiveRunID}}">run {{.ActiveRunID}} in progress</a>
+    {{else}}<span class="dot idle"></span><span class="dim">idle</span>{{end}}
+    <span class="sep">·</span>
+    <a href="/"><b>{{.Open}}</b> open</a>
+    <a href="/scoreboard"><b>{{.Armed}}</b> armed</a>
+    <a href="/signals"><b>{{.Pending}}</b> pending signals</a>
+  {{end}}
+</div>
 {{end}}
 
 {{define "strategy_card"}}
@@ -85,7 +119,7 @@ details summary{cursor:pointer;color:var(--dim)}
     </span>
     <span>
       {{if .LiveVerdict}}<span class="pill {{verdictClass .LiveVerdict}}">{{.LiveVerdict}}</span>{{end}}
-      <span class="pill {{if eq .State "open"}}ok{{else if eq .State "killed"}}bad{{else if eq .State "armed"}}warn{{else}}unknown{{end}}">{{.State}}</span>
+      <span class="pill {{statePill .State}}">{{.State}}</span>
       <span class="pill unknown">{{.Confidence}}</span>
     </span>
   </div>

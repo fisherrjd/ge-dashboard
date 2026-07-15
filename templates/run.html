@@ -1,13 +1,13 @@
 {{template "head" .}}
 {{with .Data}}
 <h1>Run {{.Run.RunID}}
-  <span class="pill {{if eq .Run.Status "succeeded"}}ok{{else if eq .Run.Status "failed"}}bad{{else}}warn{{end}}">{{.Run.Status}}</span>
-  <span class="dim" style="font-size:.85rem">started {{since .Run.StartedAt}}</span>
+  <span class="pill {{runPill .Run.Status}}">{{.Run.Status}}</span>
+  <span class="dim sub">started {{since .Run.StartedAt}}</span>
 </h1>
 
 {{if eq .Run.Status "running"}}
 <div class="card">
-  <h2 style="margin-top:0">Live progress</h2>
+  <h2>Live progress</h2>
   <div class="log" hx-ext="sse" sse-connect="/api/runs/{{.Run.RunID}}/events"
        sse-swap="turn,tool,log,report_accepted,report_rejected,finished" hx-swap="beforeend"></div>
   <p class="dim">Streams turns and tool calls as the agent works. Page reload is safe — events replay.</p>
@@ -23,7 +23,7 @@
 {{if .Run.FailReason}}<div class="err">{{.Run.FailReason}}</div>{{end}}
 
 <details class="card"><summary>Brief sent to the agent</summary>
-  <pre style="white-space:pre-wrap">{{.Run.BriefText}}</pre></details>
+  <pre class="wrap">{{.Run.BriefText}}</pre></details>
 
 {{if .Strategies}}<h2>Strategies ({{len .Strategies}})</h2>
 {{range .Strategies}}{{template "strategy_card" .}}{{end}}{{end}}

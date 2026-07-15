@@ -8,16 +8,15 @@
   <tr>
     <td><span class="pill arch">{{.Archetype}}</span></td>
     <td>{{.N}}</td><td>{{.Open}}</td>
-    <td style="color:var(--warn)">{{.Armed}}</td>
-    <td style="color:var(--ok)">{{.Confirmed}}</td>
-    <td style="color:var(--bad)">{{.Killed}}</td>
+    <td class="c-warn">{{.Armed}}</td>
+    <td class="c-ok">{{.Confirmed}}</td>
+    <td class="c-bad">{{.Killed}}</td>
     <td class="dim">{{.Expired}}</td>
     <td>{{ratio .RealizedVsProjected}}</td>
   </tr>
   {{end}}
 </table>
-<p class="dim">S = seasonal window · V = volume anomaly (armed = waiting for its trigger) · C = conversion · U = update/event · H = swing hold.
-Retired letters (A–G) are pre-re-architecture history. Confirmed = survived its evaluation window healthy; killed = its own kill switch tripped;
-realized/projected = median of what actually paid — with the self-impact haircut (15% participation, 0.5% slippage), so paper results are modeled upper bounds — vs what the run projected.</p>
+<p class="dim">realized/projected = median of what actually paid — with the self-impact haircut (15% participation, 0.5% slippage), so paper results are modeled upper bounds — vs what the run projected.
+See <a href="/info">Info</a> for what the archetype letters and states mean.</p>
 {{end}}
 {{template "foot" .}}
