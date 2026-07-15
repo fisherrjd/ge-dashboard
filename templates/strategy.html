@@ -1,7 +1,7 @@
 {{template "head" .}}
 {{with .Data}}
 <h1><span class="pill arch">{{.S.Archetype}}</span> {{.S.Title}}
-  <span class="pill {{if eq .S.State "open"}}ok{{else if eq .S.State "killed"}}bad{{else}}unknown{{end}}">{{.S.State}}</span>
+  <span class="pill {{if eq .S.State "open"}}ok{{else if eq .S.State "killed"}}bad{{else if eq .S.State "armed"}}warn{{else}}unknown{{end}}">{{.S.State}}</span>
 </h1>
 {{if .S.StateReason}}<p class="kill">{{.S.StateReason}}</p>{{end}}
 
@@ -15,6 +15,30 @@
     <div><div class="l">capital</div><div class="v">{{gp .S.Capital}}</div></div>
     <div><div class="l">opened</div><div class="v" style="font-size:.95rem">{{since .S.OpenedAt}}</div></div>
   </div>
+  {{if .S.BuyWindow}}
+  <p><span class="dim">Buy window:</span> {{howText .S.BuyWindow.FromHow}}–{{howText .S.BuyWindow.ToHow}} UTC
+     · <span class="dim">Sell window:</span> {{howText .S.SellWindow.FromHow}}–{{howText .S.SellWindow.ToHow}} UTC
+     · <span class="dim">eval window</span> {{.S.EvalWindowDays}}</p>
+  {{end}}
+  {{if .S.Trigger}}
+  <p><span class="dim">Trigger:</span> {{.S.Trigger.Metric}} {{.S.Trigger.Direction}} {{.S.Trigger.Threshold}} over {{.S.Trigger.Window}}
+     {{if .S.Direction}}· <span class="dim">direction</span> {{.S.Direction}}{{end}}
+     {{if .S.TriggeredAt}}· <span class="pill ok">fired {{sinceP .S.TriggeredAt}}</span>
+     {{else if eq .S.State "armed"}}· <span class="pill warn">armed — not yet fired</span>{{end}}</p>
+  {{end}}
+  {{if .S.Legs}}
+  <table style="margin:.6rem 0">
+    <tr><th>leg</th><th>item</th><th>qty / conversion</th><th>price at spec</th></tr>
+    {{range .S.Legs}}
+    <tr><td><span class="pill {{if eq .Side "buy"}}ok{{else}}warn{{end}}">{{.Side}}</span></td>
+        <td>{{.Name}}</td><td>{{.Qty}}</td><td>{{.Price}} gp</td></tr>
+    {{end}}
+  </table>
+  {{end}}
+  {{if .S.Event}}
+  <p><span class="dim">Event:</span> {{.S.Event.Date}} — {{.S.Event.Description}}
+     {{if .S.Direction}}· <span class="dim">direction</span> {{.S.Direction}}{{end}}</p>
+  {{end}}
   <p class="thesis">{{.S.Thesis}}</p>
   <p><span class="dim">Entry:</span> {{.S.EntryText}}<br><span class="dim">Exit:</span> {{.S.ExitText}}</p>
   <p class="kill">Kill switch: {{.S.Invalidation}}</p>

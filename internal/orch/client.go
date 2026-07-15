@@ -84,6 +84,31 @@ type Evaluation struct {
 	Verdict         string          `json:"verdict"`
 }
 
+type HourWindow struct {
+	FromHow int `json:"from_how"`
+	ToHow   int `json:"to_how"`
+}
+
+type Trigger struct {
+	Metric    string  `json:"metric"`
+	Threshold float64 `json:"threshold"`
+	Direction string  `json:"direction"`
+	Window    string  `json:"window"`
+}
+
+type Leg struct {
+	ItemID int    `json:"item_id"`
+	Name   string `json:"name"`
+	Side   string `json:"side"`
+	Qty    int64  `json:"qty"`
+	Price  int64  `json:"price"`
+}
+
+type Event struct {
+	Date        string `json:"date"`
+	Description string `json:"description"`
+}
+
 type Strategy struct {
 	StrategyID    int64           `json:"strategy_id"`
 	RunID         int64           `json:"run_id"`
@@ -109,9 +134,27 @@ type Strategy struct {
 	StateReason   *string         `json:"state_reason"`
 	OpenedAt      time.Time       `json:"opened_at"`
 
+	EvalWindowS float64     `json:"eval_window_s"`
+	BuyWindow   *HourWindow `json:"buy_window"`
+	SellWindow  *HourWindow `json:"sell_window"`
+	Trigger     *Trigger    `json:"trigger"`
+	Direction   *string     `json:"direction"`
+	Legs        []Leg       `json:"legs"`
+	RelationID  *int        `json:"relation_id"`
+	Event       *Event      `json:"event"`
+	TriggeredAt *time.Time  `json:"triggered_at"`
+
 	LiveChecks  map[string]bool `json:"live_checks"`
 	LiveVerdict string          `json:"live_verdict"`
 	Live        *Evaluation     `json:"live"`
+}
+
+// EvalWindowDays renders the paper-trading horizon for the UI.
+func (s Strategy) EvalWindowDays() string {
+	if s.EvalWindowS <= 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%.1fd", s.EvalWindowS/86400)
 }
 
 // Pointer views of non-nullable prices so templates can share the gp helper.
@@ -131,8 +174,33 @@ type ScoreboardRow struct {
 	Killed              int      `json:"killed"`
 	Expired             int      `json:"expired"`
 	Open                int      `json:"open"`
+	Armed               int      `json:"armed"`
 	RealizedVsProjected *float64 `json:"realized_vs_projected"`
 }
+
+type Signal struct {
+	SignalID   int64           `json:"signal_id"`
+	Kind       string          `json:"kind"`
+	ItemID     int             `json:"item_id"`
+	ItemName   string          `json:"item_name"`
+	Metrics    json.RawMessage `json:"metrics"`
+	Status     string          `json:"status"`
+	RunID      *int64          `json:"run_id"`
+	CreatedAt  time.Time       `json:"created_at"`
+	ResolvedAt *time.Time      `json:"resolved_at"`
+	Reason     *string         `json:"reason"`
+}
+
+func (s Signal) MetricsText() string { return string(s.Metrics) }
+
+type TrendRow struct {
+	AsOf    time.Time       `json:"as_of"`
+	Lens    string          `json:"lens"`
+	ItemID  int             `json:"item_id"`
+	Metrics json.RawMessage `json:"metrics"`
+}
+
+func (t TrendRow) MetricsText() string { return string(t.Metrics) }
 
 func (c *Client) Health(ctx context.Context) (*Health, error) {
 	var h Health
@@ -184,6 +252,16 @@ func (c *Client) Strategy(ctx context.Context, id int64) (*Strategy, []Evaluatio
 func (c *Client) Scoreboard(ctx context.Context) ([]ScoreboardRow, error) {
 	var out []ScoreboardRow
 	return out, c.get(ctx, "/api/scoreboard", &out)
+}
+
+func (c *Client) Signals(ctx context.Context) ([]Signal, error) {
+	var out []Signal
+	return out, c.get(ctx, "/api/signals?limit=100", &out)
+}
+
+func (c *Client) Trends(ctx context.Context, lens string) ([]TrendRow, error) {
+	var out []TrendRow
+	return out, c.get(ctx, "/api/trends?lens="+lens, &out)
 }
 
 func (c *Client) BriefPreview(ctx context.Context, params string) (string, error) {

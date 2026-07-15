@@ -1,0 +1,35 @@
+{{template "head" .}}
+{{with .Data}}
+<h1>Signals <span class="dim">— the collector's work queue; pending signals are assigned to the next run's brief</span></h1>
+{{if not .Signals}}<p class="dim">No signals yet — the collector sweeps hourly.</p>{{end}}
+{{if .Signals}}
+<table>
+  <tr><th>#</th><th>kind</th><th>item</th><th>status</th><th>run</th><th>age</th><th>resolution</th><th>metrics</th></tr>
+  {{range .Signals}}
+  <tr>
+    <td class="dim">{{.SignalID}}</td>
+    <td><span class="pill arch">{{.Kind}}</span></td>
+    <td>{{.ItemName}}</td>
+    <td><span class="pill {{if eq .Status "pending"}}warn{{else if eq .Status "investigated"}}ok{{else if eq .Status "assigned"}}unknown{{else}}bad{{end}}">{{.Status}}</span></td>
+    <td>{{if .RunID}}<a href="/runs/{{.RunID}}">{{.RunID}}</a>{{else}}—{{end}}</td>
+    <td class="dim">{{since .CreatedAt}}</td>
+    <td class="dim">{{if .Reason}}{{.Reason}}{{else}}—{{end}}</td>
+    <td class="mono" style="font-size:.75rem;max-width:26rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{.MetricsText}}</td>
+  </tr>
+  {{end}}
+</table>
+{{end}}
+
+<h2>Latest market sweep <span class="dim">— full-market trends the collector persists every cycle</span></h2>
+{{range $lens, $rows := .Trends}}
+{{if $rows}}
+<div class="card">
+  <div class="cardhead"><span class="t">{{$lens}}</span>
+    <span class="dim">as of {{since (index $rows 0).AsOf}}</span></div>
+  <div class="log" style="max-height:14rem">{{range $rows}}{{.MetricsText}}
+{{end}}</div>
+</div>
+{{end}}
+{{end}}
+{{end}}
+{{template "foot" .}}

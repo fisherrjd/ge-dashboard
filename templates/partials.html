@@ -64,6 +64,7 @@ details summary{cursor:pointer;color:var(--dim)}
   <a href="/" {{if eq .Active "index"}}class="active"{{end}}>Actionable now</a>
   <a href="/runs" {{if eq .Active "runs"}}class="active"{{end}}>Runs</a>
   <a href="/scoreboard" {{if eq .Active "scoreboard"}}class="active"{{end}}>Scoreboard</a>
+  <a href="/signals" {{if eq .Active "signals"}}class="active"{{end}}>Signals</a>
 </nav>
 <main>
 {{if .Err}}<div class="err">{{.Err}}</div>{{end}}
@@ -84,7 +85,7 @@ details summary{cursor:pointer;color:var(--dim)}
     </span>
     <span>
       {{if .LiveVerdict}}<span class="pill {{verdictClass .LiveVerdict}}">{{.LiveVerdict}}</span>{{end}}
-      <span class="pill {{if eq .State "open"}}ok{{else if eq .State "killed"}}bad{{else}}unknown{{end}}">{{.State}}</span>
+      <span class="pill {{if eq .State "open"}}ok{{else if eq .State "killed"}}bad{{else if eq .State "armed"}}warn{{else}}unknown{{end}}">{{.State}}</span>
       <span class="pill unknown">{{.Confidence}}</span>
     </span>
   </div>

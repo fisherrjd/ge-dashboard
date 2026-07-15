@@ -47,6 +47,13 @@ func main() {
 		"ratio":   func(f *float64) string { if f == nil { return "—" }; return fmt.Sprintf("%.2f", *f) },
 		"since":   since,
 		"verdictClass": verdictClass,
+		"howText":      howText,
+		"sinceP": func(t *time.Time) string {
+			if t == nil {
+				return "—"
+			}
+			return since(*t)
+		},
 	}
 	tpl := template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "templates/*.html"))
 
@@ -72,6 +79,7 @@ func main() {
 	mux.HandleFunc("GET /runs/{id}", s.run)
 	mux.HandleFunc("GET /strategies/{id}", s.strategy)
 	mux.HandleFunc("GET /scoreboard", s.scoreboard)
+	mux.HandleFunc("GET /signals", s.signals)
 
 	log.Printf("listening on %s (orchestrator: %s)", addr, orchURL)
 	log.Fatal(http.ListenAndServe(addr, mux))
@@ -128,7 +136,7 @@ func (s *server) triggerRun(w http.ResponseWriter, r *http.Request) {
 	}
 	b.WriteString(`, "archetypes": {`)
 	first := true
-	for _, a := range []string{"A", "B", "C", "D", "E", "F"} {
+	for _, a := range []string{"S", "V", "C", "U", "H"} {
 		if v := r.FormValue("w_" + a); v != "" {
 			if !first {
 				b.WriteString(", ")
@@ -210,6 +218,23 @@ func (s *server) strategy(w http.ResponseWriter, r *http.Request) {
 	}})
 }
 
+func (s *server) signals(w http.ResponseWriter, r *http.Request) {
+	sigs, err := s.orch.Signals(r.Context())
+	trends := map[string][]orch.TrendRow{}
+	for _, lens := range []string{"seasonal", "volume", "band"} {
+		if rows, terr := s.orch.Trends(r.Context(), lens); terr == nil {
+			trends[lens] = rows
+		}
+	}
+	p := page{Title: "Signals", Active: "signals", Data: map[string]any{
+		"Signals": sigs, "Trends": trends,
+	}}
+	if err != nil {
+		p.Err = "orchestrator unreachable: " + err.Error()
+	}
+	s.render(w, "signals.html", p)
+}
+
 func (s *server) scoreboard(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.orch.Scoreboard(r.Context())
 	p := page{Title: "Scoreboard", Active: "scoreboard", Data: rows}
@@ -259,6 +284,16 @@ func since(t time.Time) string {
 	default:
 		return fmt.Sprintf("%dd ago", int(d.Hours()/24))
 	}
+}
+
+// howText renders an hour-of-week bucket (0-167 = dow*24+hour UTC, dow
+// 0=Sunday) as "Tue 02:00".
+func howText(b int) string {
+	days := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+	if b < 0 || b > 167 {
+		return fmt.Sprintf("?%d", b)
+	}
+	return fmt.Sprintf("%s %02d:00", days[b/24], b%24)
 }
 
 func verdictClass(v string) string {

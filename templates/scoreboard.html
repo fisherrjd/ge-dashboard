@@ -1,13 +1,14 @@
 {{template "head" .}}
 <h1>Archetype scoreboard <span class="dim">— paper-traded outcomes; feeds the next run's brief automatically</span></h1>
-{{if not .Data}}<p class="dim">No closed strategies yet — the scoreboard fills as 48h evaluation windows complete.</p>{{end}}
+{{if not .Data}}<p class="dim">No closed strategies yet — the scoreboard fills as evaluation windows complete.</p>{{end}}
 {{if .Data}}
 <table>
-  <tr><th>archetype</th><th>n</th><th>open</th><th>confirmed</th><th>killed</th><th>expired</th><th>realized / projected</th></tr>
+  <tr><th>archetype</th><th>n</th><th>open</th><th>armed</th><th>confirmed</th><th>killed</th><th>expired</th><th>realized / projected</th></tr>
   {{range .Data}}
   <tr>
     <td><span class="pill arch">{{.Archetype}}</span></td>
     <td>{{.N}}</td><td>{{.Open}}</td>
+    <td style="color:var(--warn)">{{.Armed}}</td>
     <td style="color:var(--ok)">{{.Confirmed}}</td>
     <td style="color:var(--bad)">{{.Killed}}</td>
     <td class="dim">{{.Expired}}</td>
@@ -15,7 +16,8 @@
   </tr>
   {{end}}
 </table>
-<p class="dim">A = passive flip · B = mean reversion · C = range · D = surge/event · E = momentum · F = seasonal.
-Confirmed = survived its 48h window healthy; killed = its own kill switch tripped; realized/projected = median of what the margin actually paid vs what the run projected.</p>
+<p class="dim">S = seasonal window · V = volume anomaly (armed = waiting for its trigger) · C = conversion · U = update/event · H = swing hold.
+Retired letters (A–G) are pre-re-architecture history. Confirmed = survived its evaluation window healthy; killed = its own kill switch tripped;
+realized/projected = median of what actually paid — with the self-impact haircut (15% participation, 0.5% slippage), so paper results are modeled upper bounds — vs what the run projected.</p>
 {{end}}
 {{template "foot" .}}
